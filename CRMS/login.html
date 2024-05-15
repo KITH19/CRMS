@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Criminal Information Form</title>
+<style>
+  body { background-color: #333; color: #fff; font-family: Arial, sans-serif; text-align: center;}
+  h1 {text-align: center; margin-top: 1.6em;}
+  .alert {background-color: #28a745; color: #fff; pointer-events: none; padding: 8px; border-radius: 4px; border: 1px solid #555; }
+  form { max-width: 500px; margin: 20px auto; padding: 30px; background: #222; border-radius: 8px; text-align: initial;}
+  label { display: block; margin-top: 10px; }
+  input, button, textarea { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #555; background: #444; color: #ddd; }
+  input[type="radio"] { width: auto; }
+  button[type="submit"] { background-color: #28a745; color: #fff; cursor: pointer; margin-top: 1.1em; }
+  button[type="submit"]:hover { background-color: #218838; }
+</style>
+</head>
+<body>
+  <h1>Criminal Information Form</h1>
+  <div class="alert" style="display: none;">Your message has been sent</div>
+  <form id="insertRecord">
+    <label for="name">Company Name:</label>
+    <input type="text" id="name" name="name">
+
+    <label for="title">Job Title:</label>
+    <input type="text" id="title" name="title">
+
+    <label for="location">Location:</label>
+    <input type="text" id="location" name="location">
+
+    <label>Job Type:</label>
+    <label><input type="radio" name="type" value="remote"> Remote</label>
+    <label><input type="radio" name="type" value="site"> On Site</label>
+
+    <label for="description">Description:</label>
+    <input type="text" id="description" name="description">
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-storage.js"></script>
+  
+    <script>
+        var config = {
+            apiKey: "AIzaSyB0Bg3J8v4Q9XMU_r0f386pm_qNffcHQD",
+            authDomain: "project2-208b1.firebaseapp.com",
+            databaseURL: "https://project2-208b1-default-rtdb.firebaseio.com",
+            projectId: "project2-208b1",
+            storageBucket: "project2-208b1.appspot.com",
+            messagingSenderId: "642388532035",
+            appId: "1:642388532035:web:a319462dc04e5645afedf6"
+        };
+    
+        firebase.initializeApp(config);
+    
+        // Function to get form values
+        function getInputVal(id){
+            return document.getElementById(id).value;
+        }
+    
+        // Reference to Firebase Storage
+        var storageRef = firebase.storage().ref();
+    
+        // Reference messages collection
+        var messagesRef = firebase.database().ref('CriminalRecords');
+    
+        // Listen for file input change
+        document.getElementById('photo').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            var reader = new FileReader();
+    
+            reader.onload = function(event) {
+                var imgPreview = document.getElementById('photo-preview');
+                imgPreview.src = event.target.result;
+                imgPreview.style.display = 'block'; // Display the image preview
+            };
+    
+            // Read the file as a data URL
+            reader.readAsDataURL(file);
+        });
+    
+        // Listen for form submit
+        document.getElementById('insertRecord').addEventListener('submit', function(e) {
+            e.preventDefault();
+    
+            // Get form values
+            var criminalID = getInputVal('criminalID');
+            var FIR = getInputVal('FIR');
+            var fullName = getInputVal('fullName');
+            var aliase = getInputVal('aliase');
+            var crimeInvolvedIn = getInputVal('crimeInvolvedIn');
+            var gender = document.querySelector('input[name="gender"]:checked').value;
+            var address = getInputVal('address');
+            var aadhaar = getInputVal('aadhaar');
+    
+            // Get the file input element and the selected file
+            var fileInput = document.getElementById('photo');
+            var file = fileInput.files[0];
+    
+            // If no file is selected, proceed to save without a photoURL
+            if (!file) {
+                saveMessage(criminalID, FIR, fullName, aliase, crimeInvolvedIn, gender, address, aadhaar);
+                resetPhotoPreview(); // Reset photo preview
+                return;
+            }
+    
+            // Upload the file to Firebase Storage
+            var uploadTask = storageRef.child('photos/' + criminalID).put(file); // Use the criminalID as the filename
+    
+            uploadTask.on('state_changed', null, function(error) {
+                // Handle unsuccessful uploads
+                console.error('Error uploading photograph:', error);
+            }, function() {
+                // Handle successful uploads
+                uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
+                    // Save the download URL of the uploaded photograph along with other criminal information to the database
+                    saveMessage(criminalID, FIR, fullName, aliase, crimeInvolvedIn, gender, address, aadhaar, downloadURL);
+                    resetPhotoPreview(); // Reset photo preview
+                });
+            });
+    
+            // Show alert
+            document.querySelector('.alert').style.display = 'inline-block';
+    
+            // Hide alert after 3 seconds
+            setTimeout(function(){
+                document.querySelector('.alert').style.display = 'none';
+            }, 3000);
+    
+            // Clear form
+            document.getElementById('insertRecord').reset();
+        });
+    
+        // Function to save message to firebase
+        function saveMessage(criminalID, FIR, fullName, aliase, crimeInvolvedIn, gender, address, aadhaar, photoURL){
+            messagesRef.child(criminalID).set({
+                criminalID: criminalID,
+                FIR: FIR,
+                fullName: fullName,
+                aliase: aliase,
+                crimeInvolvedIn: crimeInvolvedIn,
+                gender: gender,
+                address: address,
+                aadhaar: aadhaar,
+                photoURL: photoURL // Add the photo URL to the database
+            });
+        }
+    
+        // Function to reset photo preview
+        function resetPhotoPreview() {
+            var imgPreview = document.getElementById('photo-preview');
+            imgPreview.src = ''; // Set src to an empty string or a placeholder image
+            imgPreview.style.display = 'none'; // Hide the image preview
+        }
+    </script>
+      
+</body>
+</html>

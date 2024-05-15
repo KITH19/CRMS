@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Search</title>
+    <style>
+        body {
+            background-color: #333;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .search-container {
+            margin-top: 50px;
+            text-align: center;
+        }
+        input[type=text], button {
+            padding: 12px 20px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        .photo-container {
+            margin-top: 20px;
+        }
+        .photo-container img {
+            border: 1.5px solid black;
+            max-width: 250px;
+            max-height: 250px;
+            border-radius: 8px;
+        }
+        label{
+            font-size: 1.5rem;
+        }
+        span{
+            font-size: 2rem;
+            font-weight: 600;
+            color: antiquewhite;
+        }
+    </style>
+</head>
+<body>
+
+<div class="search-container">
+    <form id="searchForm">
+        <label for="criminalNumber">Criminal Number:</label><br>
+        <input type="text" id="criminalNumber" name="criminalNumber">
+        <button type="submit">Search</button><br><br>
+
+        <label for="fullName">Full Name:</label><br>
+        <span id="fullName">-</span><br><br>
+
+        <label for="FIR">FIR Number:</label><br>
+        <span id="FIR">-</span><br><br>
+
+        <label for="crimeInvolved">Crime Involved:</label><br>
+        <span id="crimeInvolved">-</span><br><br>
+
+        <label for="aadhaarCardNo">Aadhaar Card No.:</label><br>
+        <span id="aadhaarCardNo">-</span><br><br>
+
+        <label for="address">Address:</label><br>
+        <span id="address">-</span><br><br>
+
+        <div class="photo-container">
+            <label for="photo">Photograph:</label><br>
+            <img id="photo" src="#" alt="Photo Preview" style="display: none;"><br><br>
+        </div>
+    </form>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-storage.js"></script>
+
+<script>
+    // Firebase configuration
+    var config = {
+        apiKey: "AIzaSyB0Bg3J8v4Q9XMU_r0f386pm_qNffcHQDk",
+        authDomain: "project2-208b1.firebaseapp.com",
+        databaseURL: "https://project2-208b1-default-rtdb.firebaseio.com",
+        projectId: "project2-208b1",
+        storageBucket: "project2-208b1.appspot.com",
+        messagingSenderId: "642388532035",
+        appId: "1:642388532035:web:a319462dc04e5645afedf6",
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(config);
+
+    // Reference to the Firebase database
+    var database = firebase.database();
+    var storageRef = firebase.storage().ref();
+
+    // Get elements
+    var searchForm = document.getElementById('searchForm');
+    var criminalNumberInput = document.getElementById('criminalNumber');
+    var fullNameElement = document.getElementById('fullName');
+    var addressElement = document.getElementById('address');
+    var aadhaarCardNoElement = document.getElementById('aadhaarCardNo');
+    var FIRElement = document.getElementById('FIR');
+    var crimeInvolvedElement = document.getElementById('crimeInvolved');
+    var photoElement = document.getElementById('photo');
+
+    // Listen for form submission
+    searchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Get criminal ID input value
+        var criminalID = criminalNumberInput.value;
+
+        // Retrieve data from Firebase based on criminal ID
+        database.ref('CriminalRecords/' + criminalID).once('value', function(snapshot) {
+            var data = snapshot.val();
+            console.log(data);
+            if (data) {
+                // Display retrieved data
+                fullNameElement.textContent = data.fullName || '-';
+                addressElement.textContent = data.address || '-';
+                aadhaarCardNoElement.textContent = data.aadhaar || '-';
+                FIRElement.textContent = data.FIR || '-';
+                crimeInvolvedElement.textContent = data.crimeInvolvedIn || '-';
+
+                // Retrieve photo from Firebase Storage
+                photoElement.src = data.photoURL;
+                photoElement.style.display = 'inline-block';
+
+                // if (data.photoURL) {
+                //     storageRef.child(data.photoURL).getDownloadURL().then(function(url) {
+                //         photoElement.src = url;
+                //         photoElement.style.display = 'block';
+                //     }).catch(function(error) {
+                //         console.error('Error retrieving photo:', error);
+                //     });
+                // } else {
+                //     photoElement.src = '#';
+                //     photoElement.style.display = 'none';
+                // }
+            } else {
+                // If no data found, display dashes
+                fullNameElement.textContent = '-';
+                addressElement.textContent = '-';
+                aadhaarCardNoElement.textContent = '-';
+                FIRElement.textContent = '-';
+                crimeInvolvedElement.textContent = '-';
+                photoElement.src = '#';
+                photoElement.style.display = 'none';
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

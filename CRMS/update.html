@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Criminal Information</title>
+    <style>
+        body {
+            background-color: #333;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .update-container {
+            margin-top: 50px;
+            text-align: center;
+        }
+        input[type=text], input[type=file], select, button {
+            padding: 12px 20px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="update-container">
+    <h2>Update Criminal Information</h2>
+    <div id="searchForm">
+        <label for="criminalNumber">Enter Criminal ID:</label><br>
+        <input type="text" id="criminalNumber" name="criminalNumber">
+        <button type="button" onclick="searchCriminal()">Search</button><br><br>
+    </div>
+
+    <form id="updateForm" style="display: none;">
+        <label for="criminalNumber">Criminal Number:</label><br>
+        <input type="text" id="criminalNumberUpdate" name="criminalNumber" disabled><br><br>
+
+        <label for="FIR">FIR Number:</label><br>
+        <input type="text" id="FIR" name="FIR"><br><br>
+
+        <label for="aadhaar">Aadhaar Card Number:</label><br>
+        <input type="text" id="aadhaar" name="aadhaar"><br><br>
+
+        <label for="address">Address:</label><br>
+        <input type="text" id="address" name="address"><br><br>
+
+        <label for="aliase">Alias:</label><br>
+        <input type="text" id="aliase" name="aliase"><br><br>
+
+        <label for="crimeInvolvedIn">Crime Involved In:</label><br>
+        <input type="text" id="crimeInvolvedIn" name="crimeInvolvedIn"><br><br>
+
+        <label for="fullName">Full Name:</label><br>
+        <input type="text" id="fullName" name="fullName"><br><br>
+
+        <label for="gender">Gender:</label><br>
+        <select id="gender" name="gender">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+        </select><br><br>
+
+        <label for="photo">Photograph:</label><br>
+        <input type="file" id="photo" name="photo" accept="image/*"><br><br>
+
+        <button type="submit">Update</button>
+    </form> 
+    <div id="updateMessage" style="margin-top: 20px; display: none; border: 2px solid red; padding: 1.3em;"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-storage.js"></script>
+
+<script>
+    // Firebase configuration
+    var config = {
+        apiKey: "AIzaSyB0Bg3J8v4Q9XMU_r0f386pm_qNffcHQDk",
+        authDomain: "project2-208b1.firebaseapp.com",
+        databaseURL: "https://project2-208b1-default-rtdb.firebaseio.com",
+        projectId: "project2-208b1",
+        storageBucket: "project2-208b1.appspot.com",
+        messagingSenderId: "642388532035",
+        appId: "1:642388532035:web:a319462dc04e5645afedf6",
+        databaseURL: "https://project2-208b1-default-rtdb.firebaseio.com"
+    };
+    
+    // Initialize Firebase
+    firebase.initializeApp(config);
+
+    // Reference to the Firebase database
+    var database = firebase.database();
+    var storage = firebase.storage();
+
+    // Get elements
+    var searchForm = document.getElementById('searchForm');
+    var updateForm = document.getElementById('updateForm');
+    var updateMessage = document.getElementById('updateMessage');
+    var criminalNumberInput = document.getElementById('criminalNumber');
+    var criminalNumberUpdateInput = document.getElementById('criminalNumberUpdate');
+
+    // Function to search for criminal record
+    function searchCriminal() {
+        var criminalNumber = criminalNumberInput.value.trim();
+        if (criminalNumber !== '') {
+            database.ref('CriminalRecords/' + criminalNumber).once('value', function(snapshot) {
+                var data = snapshot.val();
+                if (data) {
+                    // Display update form with existing details
+                    criminalNumberUpdateInput.value = criminalNumber;
+                    document.getElementById('FIR').value = data.FIR || '';
+                    document.getElementById('aadhaar').value = data.aadhaar || '';
+                    document.getElementById('address').value = data.address || '';
+                    document.getElementById('aliase').value = data.aliase || '';
+                    document.getElementById('crimeInvolvedIn').value = data.crimeInvolvedIn || '';
+                    document.getElementById('fullName').value = data.fullName || '';
+                    document.getElementById('gender').value = data.gender || 'male';
+                    // Hide search form and display update form
+                    searchForm.style.display = 'none';
+                    updateForm.style.display = 'block';
+                } else {
+                    alert('Criminal record not found.');
+                }
+            });
+        } else {
+            alert('Please enter a valid criminal number.');
+        }
+    }
+
+    // Listen for form submission
+    updateForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Get form values
+        var criminalNumber = document.getElementById('criminalNumberUpdate').value;
+        var FIR = document.getElementById('FIR').value;
+        var aadhaar = document.getElementById('aadhaar').value;
+        var address = document.getElementById('address').value;
+        var aliase = document.getElementById('aliase').value;
+        var crimeInvolvedIn = document.getElementById('crimeInvolvedIn').value;
+        var fullName = document.getElementById('fullName').value;
+        var gender = document.getElementById('gender').value;
+        var photo = document.getElementById('photo').files[0];
+
+        // Update information in Firebase
+        var updates = {};
+        updates['CriminalRecords/' + criminalNumber + '/FIR'] = FIR;
+        updates['CriminalRecords/' + criminalNumber + '/aadhaar'] = aadhaar;
+        updates['CriminalRecords/' + criminalNumber + '/address'] = address;
+        updates['CriminalRecords/' + criminalNumber + '/aliase'] = aliase;
+        updates['CriminalRecords/' + criminalNumber + '/crimeInvolvedIn'] = crimeInvolvedIn;
+        updates['CriminalRecords/' + criminalNumber + '/fullName'] = fullName;
+        updates['CriminalRecords/' + criminalNumber + '/gender'] = gender;
+
+        if (photo) {
+            // Upload photo if selected
+            var storageRef = storage.ref('photos/' + criminalNumber);
+            var uploadTask = storageRef.put(photo);
+
+            uploadTask.on('state_changed', null, function(error) {
+                console.error('Error uploading photo:', error);
+            }, function() {
+                // Get photo URL after upload and update in database
+                uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
+                    updates['CriminalRecords/' + criminalNumber + '/photoURL'] = downloadURL;
+                    updateFirebase(updates);
+                });
+            });
+        } else {
+            // If no photo selected, update other fields directly
+            updateFirebase(updates);
+        }
+    });
+
+    // Function to update information in Firebase
+    function updateFirebase(updates) {
+        database.ref().update(updates, function(error) {
+            if (error) {
+                updateMessage.innerHTML = 'Error updating information: ' + error.message;
+                updateMessage.style.color = 'red';
+            } else {
+                updateMessage.innerHTML = 'Information updated successfully';
+                updateMessage.style.color = 'green';
+                // Clear form after successful update
+                updateForm.reset();
+                // Show search form again
+                searchForm.style.display = 'block';
+                updateForm.style.display = 'none';
+            }
+            // Show update message
+            updateMessage.style.display = 'inline-block';
+            setTimeout(function(){
+                updateMessage.style.display = 'none';
+                }, 3000);
+        });
+    }
+</script>
+
+</body>
+</html>

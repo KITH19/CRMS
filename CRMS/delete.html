@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search and Delete Criminal Information</title>
+    <style>
+        body {
+            background-color: #333;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .search-container {
+            margin-top: 50px;
+            text-align: center;
+        }
+        input[type=text], button {
+            padding: 12px 20px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #f44336;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #cc0000;
+        }
+        .details-container {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .details {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        label{
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="search-container">
+    <form id="searchForm">
+        <label for="criminalNumber">Criminal ID:</label><br>
+        <input type="text" id="criminalNumber" name="criminalNumber">
+        <button type="submit">Search</button><br><br>
+
+        <div class="details-container">
+            <div class="details" id="fullName">Full Name: -</div>
+            <div class="details" id="FIR">FIR Number: -</div>
+            <button id="deleteButton" style="display: none;" onclick="deleteCriminalInformation()">Delete</button>
+        </div>
+    </form>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-storage.js"></script>
+
+<script>
+    // Firebase configuration
+    var config = {
+        apiKey: "AIzaSyB0Bg3J8v4Q9XMU_r0f386pm_qNffcHQDk",
+        authDomain: "project2-208b1.firebaseapp.com",
+        databaseURL: "https://project2-208b1-default-rtdb.firebaseio.com",
+        projectId: "project2-208b1",
+        storageBucket: "project2-208b1.appspot.com",
+        messagingSenderId: "642388532035",
+        appId: "1:642388532035:web:a319462dc04e5645afedf6",
+        databaseURL: "https://project2-208b1-default-rtdb.firebaseio.com"
+    };
+  
+    // Initialize Firebase
+    firebase.initializeApp(config);
+
+    // Reference to the Firebase database
+    var database = firebase.database();
+
+    // Get elements
+    var searchForm = document.getElementById('searchForm');
+    var criminalNumberInput = document.getElementById('criminalNumber');
+    var fullNameElement = document.getElementById('fullName');
+    var firElement = document.getElementById('FIR');
+    var deleteButton = document.getElementById('deleteButton');
+
+    // Listen for form submission
+    searchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Get criminal ID input value
+        var criminalID = criminalNumberInput.value;
+
+        // Retrieve data from Firebase based on criminal ID
+        database.ref('CriminalRecords/' + criminalID).once('value', function(snapshot) {
+            var data = snapshot.val();
+            if (data) {
+                // Display retrieved data
+                fullNameElement.textContent = "Full Name: " + (data.fullName || '-');
+                firElement.textContent = "FIR Number: " + (data.FIR || '-');
+                deleteButton.style.display = 'inline-block'; // Show delete button
+                deleteButton.dataset.criminalID = criminalID; // Set criminal ID as a data attribute for the delete button
+            } else {
+                // If no data found, display dashes and hide delete button
+                fullNameElement.textContent = "Full Name: -";
+                firElement.textContent = "FIR Number: -";
+                deleteButton.style.display = 'none';
+                deleteButton.dataset.criminalID = ''; // Clear criminal ID data attribute for the delete button
+            }
+        });
+    });
+
+    // Function to delete criminal information from Firebase
+    function deleteCriminalInformation() {
+        var criminalID = deleteButton.dataset.criminalID;
+        if (criminalID) {
+            // Remove criminal information from Firebase
+            database.ref('CriminalRecords/' + criminalID).remove()
+                .then(function() {
+                    // After successful deletion, reset fields and hide delete button
+                    fullNameElement.textContent = "Full Name: -";
+                    firElement.textContent = "FIR: -";
+                    deleteButton.style.display = 'none';
+                    deleteButton.dataset.criminalID = ''; // Clear criminal ID data attribute for the delete button
+                    criminalNumberInput.value = ''; // Clear criminal ID input field
+                })
+                .catch(function(error) {
+                    console.error('Error deleting criminal information:', error);
+                });
+        }
+    }
+</script>
+
+</body>
+</html>
